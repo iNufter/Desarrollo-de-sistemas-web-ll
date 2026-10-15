@@ -1,0 +1,126 @@
+CREATE DATABASE TiendaSara;
+GO
+
+USE TiendaSara;
+GO
+
+--Creacion de la tabla Categorias
+CREATE TABLE Categorias (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Descripcion VARCHAR(100) NOT NULL
+);
+
+--Creacion de la tabla Marcas
+CREATE TABLE Marcas (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Descripcion VARCHAR(100) NOT NULL
+);
+
+-- Creación de la tabla Productos
+CREATE TABLE Productos (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Descripcion VARCHAR(150) NOT NULL,
+    Precio DECIMAL(10, 2) NOT NULL CHECK (Precio >= 0),
+    Cantidad INT NOT NULL CHECK (Cantidad >= 0),
+    idCategoria INT NOT NULL,
+    idMarca INT NOT NULL,
+    CONSTRAINT FK_Producto_Categoria FOREIGN KEY (idCategoria) REFERENCES Categorias(Id),
+    CONSTRAINT FK_Producto_Marca FOREIGN KEY (idMarca) REFERENCES Marcas(Id)
+);
+
+-- Creación de la tabla Carrito
+CREATE TABLE Carrito (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    FolioVenta VARCHAR(50) NOT NULL UNIQUE,
+    TotalCompra DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    Estatus VARCHAR(30) NOT NULL DEFAULT 'Activo',
+    Fecha DATETIME NOT NULL DEFAULT GETDATE()
+);
+
+-- Creación de la tabla CarritoDetalle
+CREATE TABLE CarritoDetalle (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    IdCarrito INT NOT NULL,
+    IdProducto INT NOT NULL,
+    Cantidad INT NOT NULL CHECK (Cantidad > 0),
+    Subtotal DECIMAL(10, 2) NOT NULL CHECK (Subtotal >= 0),
+    CONSTRAINT FK_Detalle_Carrito FOREIGN KEY (IdCarrito) REFERENCES Carrito(Id),
+    CONSTRAINT FK_Detalle_Producto FOREIGN KEY (IdProducto) REFERENCES Productos(Id)
+);
+GO
+
+-- Categorías
+INSERT INTO Categorias (Descripcion) VALUES ('Electrónica');
+INSERT INTO Categorias (Descripcion) VALUES ('Línea Blanca');
+INSERT INTO Categorias (Descripcion) VALUES ('Ropa y Moda');
+INSERT INTO Categorias (Descripcion) VALUES ('Deportes');
+INSERT INTO Categorias (Descripcion) VALUES ('Hogar');
+
+-- Marcas
+INSERT INTO Marcas (Descripcion) VALUES ('Sony');
+INSERT INTO Marcas (Descripcion) VALUES ('Samsung');
+INSERT INTO Marcas (Descripcion) VALUES ('Nike');
+INSERT INTO Marcas (Descripcion) VALUES ('Whirlpool');
+INSERT INTO Marcas (Descripcion) VALUES ('IKEA');
+
+-- Productos
+INSERT INTO Productos (Descripcion, Precio, Cantidad, idCategoria, idMarca) VALUES ('Pantalla Smart TV 50"', 8500.00, 10, 1, 2);
+INSERT INTO Productos (Descripcion, Precio, Cantidad, idCategoria, idMarca) VALUES ('Audífonos Inalámbricos', 1200.00, 25, 1, 1);
+INSERT INTO Productos (Descripcion, Precio, Cantidad, idCategoria, idMarca) VALUES ('Tenis deportivos Running', 1800.00, 15, 3, 3);
+INSERT INTO Productos (Descripcion, Precio, Cantidad, idCategoria, idMarca) VALUES ('Refrigerador Duplex', 14500.00, 4, 2, 4);
+INSERT INTO Productos (Descripcion, Precio, Cantidad, idCategoria, idMarca) VALUES ('Mesa de Centro Minimalista', 2300.00, 8, 5, 5);
+
+-- Carritos
+INSERT INTO Carrito (FolioVenta, TotalCompra, Estatus, Fecha) VALUES ('FOL-001', 9700.00, 'Completado', GETDATE());
+INSERT INTO Carrito (FolioVenta, TotalCompra, Estatus, Fecha) VALUES ('FOL-002', 1800.00, 'Activo', GETDATE());
+INSERT INTO Carrito (FolioVenta, TotalCompra, Estatus, Fecha) VALUES ('FOL-003', 14500.00, 'Pendiente', GETDATE());
+INSERT INTO Carrito (FolioVenta, TotalCompra, Estatus, Fecha) VALUES ('FOL-004', 2300.00, 'Completado', GETDATE());
+INSERT INTO Carrito (FolioVenta, TotalCompra, Estatus, Fecha) VALUES ('FOL-005', 1200.00, 'Activo', GETDATE());
+
+-- CarritoDetalle
+INSERT INTO CarritoDetalle (IdCarrito, IdProducto, Cantidad, Subtotal) VALUES (1, 1, 1, 8500.00);
+INSERT INTO CarritoDetalle (IdCarrito, IdProducto, Cantidad, Subtotal) VALUES (1, 2, 1, 1200.00);
+INSERT INTO CarritoDetalle (IdCarrito, IdProducto, Cantidad, Subtotal) VALUES (2, 3, 1, 1800.00);
+INSERT INTO CarritoDetalle (IdCarrito, IdProducto, Cantidad, Subtotal) VALUES (3, 4, 1, 14500.00);
+INSERT INTO CarritoDetalle (IdCarrito, IdProducto, Cantidad, Subtotal) VALUES (4, 5, 1, 2300.00);
+GO
+
+-- 1. Consultar los productos con sus marcas y sus categorías
+SELECT 
+    p.Id AS IdProducto,
+    p.Descripcion AS Producto,
+    p.Precio,
+    p.Cantidad,
+    c.Descripcion AS Categoria,
+    m.Descripcion AS Marca
+FROM Productos p
+INNER JOIN Categorias c ON p.idCategoria = c.Id
+INNER JOIN Marcas m ON p.idMarca = m.Id;
+
+-- 2. Consultar los carritos con sus carritos detalle y sus productos
+SELECT 
+    car.Id AS IdCarrito,
+    car.FolioVenta,
+    car.Estatus,
+    cd.Cantidad AS CantidadEnCarrito,
+    cd.Subtotal,
+    p.Descripcion AS Producto
+FROM Carrito car
+INNER JOIN CarritoDetalle cd ON car.Id = cd.IdCarrito
+INNER JOIN Productos p ON cd.IdProducto = p.Id;
+
+-- 3. Consultar los carritos con sus carritos detalle, productos, marcas y categorías
+SELECT 
+    car.FolioVenta,
+    car.Estatus,
+    car.Fecha,
+    p.Descripcion AS Producto,
+    cd.Cantidad,
+    cd.Subtotal,
+    m.Descripcion AS Marca,
+    c.Descripcion AS Categoria
+FROM Carrito car
+INNER JOIN CarritoDetalle cd ON car.Id = cd.IdCarrito
+INNER JOIN Productos p ON cd.IdProducto = p.Id
+INNER JOIN Marcas m ON p.idMarca = m.Id
+INNER JOIN Categorias c ON p.idCategoria = c.Id;
